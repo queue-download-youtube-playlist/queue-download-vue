@@ -1,0 +1,26 @@
+{
+  "name": "queue-download-vue",
+  "version": "0.0.3",
+  "private": true,
+  "scripts": {
+    "npm_install": "npm install",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "author": {
+    "name": "vacantthinker"
+  },
+  "homepage": "https://github.com/queue-download-youtube-playlist/queue-download-vue",
+  "license": "MIT",
+  "dependencies": {
+    "@popperjs/core": "^2.11.6",
+    "bootstrap": "^5.2.3",
+    "vue": "^3.2.47",
+    "vue-router": "^4.1.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.0.0",
+    "vite": "^4.1.4"
+  }
+}
