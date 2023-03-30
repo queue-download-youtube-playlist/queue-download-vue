@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "git_push": "git add . && git commit -m 'update' && git push --force",
-    "npm_install": "npm install",
+    "yarn_install": "yarn install",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"

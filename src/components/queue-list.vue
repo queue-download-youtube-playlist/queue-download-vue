@@ -35,7 +35,6 @@
         </button>
 
         <button
-            :disabled="queue.total === queue.progress"
             @click="fetchPlaylistDownload(queue)"
             class="btn btn-outline-info">download all video
         </button>
