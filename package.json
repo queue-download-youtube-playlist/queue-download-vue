@@ -3,6 +3,7 @@
   "version": "0.0.3",
   "private": true,
   "scripts": {
+    "git_push": "git add . && git commit -m 'update' && git push --force",
     "npm_install": "npm install",
     "dev": "vite",
     "build": "vite build",
