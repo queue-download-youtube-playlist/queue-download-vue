@@ -2,6 +2,17 @@
 
 # this vue project for queue-download-desktop views
 
+### dir
+```text
+vue-project/
+    dist/
+
+electron-project/
+    public/
+
+```
+
+### setupVueToElectron()
 ```javascript
 /**
  * npm run build (vite build) -->
