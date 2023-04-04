@@ -15,10 +15,12 @@ const router = createRouter({
       component: () => import('../views/search-view.vue'),
     },
     {
-      path: '/queue-view',
-      name: 'queue-view',
-      component: () => import('../views/queue-view.vue'),
+      path: '/playlist-view',
+      name: 'playlist-view',
+      component: () => import('../views/playlist-view.vue'),
     },
+    // {path: '/test-view', name: 'test-view', component: () => import('../views/test-view.vue'),},
+
   ],
   linkActiveClass: 'active',
 

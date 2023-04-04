@@ -51,10 +51,6 @@
 export default {
   name: 'queue-list',
   props: {
-    socket: {
-      type: Object,
-      default: null,
-    },
     messageQueue: {type: Object, default: null},
   },
   watch: {
@@ -104,7 +100,7 @@ export default {
     fetchOpenNewTab(queue) {
     },
     fetchQueueDelete(queue) {
-      delete this.queueList[queue.playlist];
+      delete this.queueList[queue['playlist']];
 
       let message = {queue};
       let input = `${this.prehost}queue/`;

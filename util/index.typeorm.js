@@ -1,5 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+
+const {
+  getPathByLevelUp,
+  handleTextArr,
+  readPackageJson,
+} = require('./index.common');
 const stringList = {
   // 'server'
   string_server: 'server',
@@ -7,6 +14,9 @@ const stringList = {
   string_db: 'db',
   // 'server'
   string_entity: 'entity',
+  // 'db.sqlite'
+  string_db_sqlite3: 'db.sqlite',
+
   // 'util.typeorm.js'
   filename_util_typeorm: 'util.typeorm.js',
   // 'util.datasource.js'
@@ -14,34 +24,6 @@ const stringList = {
   // 'datasource.js'
   filename_datasource: 'datasource.js',
 };
-
-/**
- * find dir/ level up
- *
- * eg: xxx-project/server/db/entity/
- *
- * return xxx-project/server/db/
- *
- * @param pathTarget
- * @param filename
- * @returns {string}
- */
-function getPathByLevelUp(
-    pathTarget = null,
-    filename = null) {
-
-  if (pathTarget === null) {
-    pathTarget = findPathTarget();
-  }
-
-  const basename = path.basename(pathTarget);
-  const pathLevelUp = pathTarget.replace(basename, '');
-  if (filename === null) {
-    return pathLevelUp;
-  } else {
-    return path.join(pathLevelUp, filename);
-  }
-}
 
 /**
  * default: xxx-project/server/db/entity/
@@ -59,46 +41,10 @@ function findPathTarget() {
 }
 
 /**
- * create an array, save text
- *
- * return textArray.reduce( (str, value)=>{
- *
- *   return str.concat(value)
- *
- * }, '')
- *
- * @param pathTarget xxx/ dir
- * @param callbacks calback array
- * @returns {*}
- */
-function handleTextArr(pathTarget, ...callbacks) {
-  const textArr = [];
-
-  const filenameList = fs.readdirSync(pathTarget);
-  callbacks.forEach((callback) => {
-    filenameList.forEach((filename) => {
-      const text = callback(filename);
-      if (Array.isArray(text)) {
-        Array.from(text).forEach((value) => {
-          textArr.push(value);
-        });
-      } else {
-        textArr.push(text);
-      }
-    });
-  });
-
-  const reduce = textArr.reduce((str, value) => {
-    return str.concat(value);
-  }, '');
-  return reduce;
-}
-
-/**
  * gene util.typeorm.js file
  * @param pathTarget
  */
-function geneUtilTypeormJs(pathTarget = null,) {
+function geneUtilTypeormJs(pathTarget = null) {
   if (pathTarget === null) {
     pathTarget = findPathTarget();
   }
@@ -169,9 +115,9 @@ function geneUtilTypeormJs(pathTarget = null,) {
    */
   ${entityName}Find: async (options) => {
     if (options === null) {
-      return await dataSource.getRepository('video').find();
+      return await dataSource.getRepository('${entityName}').find();
     }else {
-      return await dataSource.getRepository('video').find(options);
+      return await dataSource.getRepository('${entityName}').find(options);
     }
   },
   /**
@@ -221,12 +167,43 @@ module.exports = {
 }
 
 /**
+ *
+ * @returns
+ */
+function getAppPathDbSqlite3() {
+
+  const platform = os.platform();
+  console.log(`platform=\n`, platform, `\n`);
+  if (platform.includes('win32')) {
+    const homedir = os.homedir();
+    const {productName: dirName} = readPackageJson();
+    const pathUserData = path.join(homedir,
+        'AppData', 'Roaming', dirName, 'dbsqlite3');
+
+    if (fs.existsSync(pathUserData) === false) {
+      fs.mkdirSync(pathUserData);
+    }
+
+    const dbSqlite3 = path.join(pathUserData,
+        stringList.string_db_sqlite3);
+    console.log(`dbSqlite3=\n`, dbSqlite3, `\n`);
+
+    return dbSqlite3.replace(/\\/g, '\\\\');
+  } else {
+    return null;
+  }
+}
+
+/**
  * generator datasource.js file
  * @param pathTarget
  */
 function geneDataSourceJs(
     pathTarget = null,
 ) {
+  const dbSqlite3 = getAppPathDbSqlite3();
+  console.log(`dbSqlite3=\n`, dbSqlite3, `\n`);
+
   const text =
       `'use strict';
       
@@ -236,7 +213,7 @@ const {getEntitySchemaList} = require('./util.datasource.js');
 const entities = getEntitySchemaList();
 const dataSource = new DataSource({
   type: 'better-sqlite3',
-  database: 'db.sqlite',
+  database: '${dbSqlite3}',
   synchronize: true,
   logging: false,
   entities,
@@ -259,6 +236,9 @@ module.exports = {
 };
 `;
 
+  if (pathTarget === null) {
+    pathTarget = findPathTarget();
+  }
   pathTarget = getPathByLevelUp(pathTarget);
   const file = path.join(pathTarget, stringList.filename_datasource);
   fs.writeFileSync(file, text);
@@ -309,7 +289,8 @@ module.exports = {
 };
 `;
 
-  const file = getPathByLevelUp(pathTarget, stringList.filename_util_datasource);
+  const file = getPathByLevelUp(pathTarget,
+      stringList.filename_util_datasource);
   fs.writeFileSync(file, text);
   console.log(`file=\n`, file, `\n`);
   console.log(`text=\n`, text, `\n`);

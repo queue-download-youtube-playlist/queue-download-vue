@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const {getPathByLevelUp, handleTextArr} = require('./index.common');
 const stringList = {
   // 'router'
   string_router: 'router',
@@ -8,34 +9,6 @@ const stringList = {
   // 'util.express.js'
   filename_util_express: 'util.express.js',
 };
-
-/**
- * find dir/ level up
- *
- * eg: xxx-project/server/router/
- *
- * return xxx-project/server/
- *
- * @param pathTarget
- * @param filename
- * @returns {string}
- */
-function getPathByLevelUp(
-    pathTarget = null,
-    filename = null) {
-
-  if (pathTarget === null) {
-    pathTarget = findPathTarget();
-  }
-
-  const basename = path.basename(pathTarget);
-  const pathLevelUp = pathTarget.replace(basename, '');
-  if (filename === null) {
-    return pathLevelUp;
-  } else {
-    return path.join(pathLevelUp, filename);
-  }
-}
 
 /**
  * if pathRouter === null,
@@ -51,35 +24,6 @@ function findPathTarget() {
       stringList.string_server, stringList.string_router);
   console.log(`pathTarget=\n`, pathTarget, `\n`);
   return pathTarget;
-}
-
-/**
- * create an array, save text
- * @param pathTarget
- * @param callbacks
- * @returns {*}
- */
-function handleTextArr(pathTarget, ...callbacks) {
-  const textArr = [];
-
-  const filenameList = fs.readdirSync(pathTarget);
-  callbacks.forEach((callback) => {
-    filenameList.forEach((filename) => {
-      const text = callback(filename);
-      if (Array.isArray(text)) {
-        Array.from(text).forEach((value) => {
-          textArr.push(value);
-        });
-      } else {
-        textArr.push(text);
-      }
-    });
-  });
-
-  const reduce = textArr.reduce((str, value) => {
-    return str.concat(value);
-  }, '');
-  return reduce;
 }
 
 /**
@@ -99,7 +43,7 @@ function geneUtilExpressJs(
     pathTarget = findPathTarget();
   }
 
-  const dirName = stringList.string_router
+  const dirName = stringList.string_router;
   const reduce = handleTextArr(pathTarget, (filename) => {
     const reg = /.+(?=\.router\.js)/;
     const mat = filename.match(reg);
@@ -108,9 +52,9 @@ function geneUtilExpressJs(
     const line = `const ${routerName}Router = require('./${dirName}/${routerName}.router.js');
   app.use('/${routerName}', ${routerName}Router(passdata));
 
-  `
-    return line
-  })
+  `;
+    return line;
+  });
 
   const text =
       `'use strict';
@@ -119,10 +63,26 @@ function setupRouterList(app, passdata) {
   ${reduce}
 }
 
+function getIPAddress() {
+  let interfaces = require('os').networkInterfaces();
+  for (let devName in interfaces) {
+    let iface = interfaces[devName];
+
+    for (let i = 0; i < iface.length; i++) {
+      let alias = iface[i];
+      if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal)
+        return alias.address;
+    }
+  }
+  return '0.0.0.0';
+}
+
 module.exports = {
   setupRouterList: setupRouterList,
+  getIPAddress: getIPAddress
 };
-`
+
+`;
 
   const file = getPathByLevelUp(pathTarget, stringList.filename_util_express);
   fs.writeFileSync(file, text);

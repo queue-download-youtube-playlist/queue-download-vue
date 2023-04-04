@@ -74,7 +74,7 @@ export default {
     };
   },
   methods: {
-    fetchOpen(vid){
+    fetchOpen(vid) {
       let input = `${this.prehost}open/${vid}`;
       fetch(input).then();
     },
@@ -84,11 +84,11 @@ export default {
       };
       let input = `${this.prehost}notice/mp4`;
       let init = {
-      method: 'POST', 
-      headers: {
-      'Content-Type': 'application/json',
-      }, 
-      body: JSON.stringify(message),
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message),
       };
       fetch(input, init).then();
     },
@@ -100,6 +100,7 @@ export default {
       if (length === 0) {
         this.$emit('go-allauthor', this.defaultauthor);
         this.$emit('delete-author', author);
+        console.log(`author=\n`, author, `\n`);
       }
 
       let message = {

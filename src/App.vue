@@ -2,26 +2,24 @@
   <header>
     <ul class="nav nav-pills">
       <li class="nav-item" id="homeRouter">
-        <RouterLink
-            class="nav-link"
-            ref="homeRouter"
-            to="/">
+        <RouterLink class="nav-link" ref="homeRouter" to="/">
           Home
         </RouterLink>
       </li>
-      <li class="nav-item">
-        <RouterLink
-            class="nav-link"
-            to="/search-view">
-          Search View
+      <li class="nav-item" id="searchRouter">
+        <RouterLink class="nav-link" to="/search-view">
+          Search
         </RouterLink>
       </li>
       <li class="nav-item">
-        <RouterLink
-            class="nav-link"
-            to="/queue-view">
-          Queue View
+        <RouterLink class="nav-link" to="/playlist-view">
+          Playlist
         </RouterLink>
+      </li>
+      <li class="nav-item">
+        <div class="nav-link">
+          <span>{{this.info}}</span>
+        </div>
       </li>
     </ul>
   </header>
@@ -31,6 +29,9 @@
         :messageContainer="this.messageContainer"
         :messageQueue="this.messageQueue"
         :messageDownload="this.messageDownload"
+        :messageSearch="this.messageSearch"
+
+        @click-search-router="this.clickSearchRouter"
     />
   </main>
 </template>
@@ -46,32 +47,40 @@ export default {
       messageContainer: null,
       messageQueue: null,
       messageDownload: null,
+      messageSearch: null,
+
+      info: 'no alive extension',
     };
   },
+  watch: {
+    messageContainer(newValue, oldValue) {
+      if (newValue) {
+        let {dowhat, info} = newValue;
+        this.info = info;
+      }
+    },
+  },
   methods: {
-    clickHomeRouter() {
-      document.getElementById('homeRouter')
-          .firstElementChild.click()
+    clickSearchRouter(){
+      document.getElementById('searchRouter').firstElementChild.click();
     },
     switchSocketMessage(message) {
       let action = message['action'];
-      if (action.includes('socketinit')) {
-        this.socket.uuid = message.uuid;
-      } else {
-        if (action.startsWith('notice_desktop_')) {
+      if (action.startsWith('n_desk_')) {
+        switch (message['whichone']) {
+          case 'container':
+            this.messageContainer = message;
+            break;
+          case 'queue':
+            this.messageQueue = message;
+            break;
+          case 'download':
+            this.messageDownload = message;
+            break;
+          case 'search':
+            this.messageSearch = message;
+            break;
 
-          switch (message['whichone']) {
-            case 'container':
-              this.messageContainer = message;
-              break;
-            case 'queue':
-              this.messageQueue = message;
-              break;
-            case 'download':
-              this.messageDownload = message;
-              break;
-
-          }
         }
       }
     },
@@ -85,14 +94,14 @@ export default {
       socket.addEventListener('error', () => {
       });
       socket.addEventListener('message', (ev) => {
-        let socketmessage = JSON.parse(ev.data);
+        let socketmessage = JSON.parse(String(ev.data));
         this.switchSocketMessage(socketmessage);
       });
       this.socket = socket;
     },
   },
   mounted() {
-    this.clickHomeRouter();
+    this.clickSearchRouter();
   },
   created() {
     this.initSocket();

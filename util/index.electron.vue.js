@@ -1,115 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-/**
- * read env file , eg: env.sh xxx.env
- *
- * @param filename path env file
- * @returns {{}}
- */
-function readEnvFile(filename) {
-  const buffer = fs.readFileSync(path.join(filename));
-  const textContent = buffer.toString();
-
-  const split = textContent.split('\n');
-
-  const reduce = split.filter((value) => {
-    return value.trim().length > 0;
-  }).reduce((map, value) => {
-    const regexpKey = /.+(?=\=)/;
-    const envKey = value.match(regexpKey)[0];
-    const regexpVal = /(?<=\=).+/;
-    const envVal = value.match(regexpVal)[0].replace(/\"/g, '');
-
-    map[envKey] = envVal;
-    return map;
-  }, {});
-
-  return reduce;
-}
-
-/**
- *
- * @param pathTarget
- * @returns {any}
- */
-function readPackageJson(pathTarget = 'package.json') {
-  const path_package_json = path.join(pathTarget);
-  const buffer = fs.readFileSync(path_package_json);
-  const textContent = buffer.toString();
-
-  const objPackageJson = JSON.parse(textContent);
-  return objPackageJson;
-}
-
-/**
- * generate electron index.html
- *
- * just add
- *
- * <div id="app"></div>
- *
- * <script src="./renderer.js" type="module"></script>
- *
- *
- * @param title
- * @param pathTarget
- */
-function setupElectron_index_html(
-    title = null,
-    pathTarget = 'dist') {
-
-  if (title === null) {
-    title = 'index.html title'
-  }
-  const indexHtmlContent =
-      `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <link href="./favicon.ico" rel="icon">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>${title}</title>
-</head>
-<body>
-<div id="app"></div>
-<script src="./renderer.js" type="module"></script>
-</body>
-</html>
-`;
-
-  const string_index_html = 'index.html';
-  const path_index_html = path.join(pathTarget, string_index_html);
-  fs.writeFileSync(path_index_html, '');
-  fs.writeFileSync(path_index_html, indexHtmlContent);
-
-}
-
-/**
- * generate renderer.js
- *
- * read dir assets/ forEach()
- *
- * appendFile
- *
- *    import './assets/home-view-xxx.js'
- *
- * @param pathTarget {String}
- */
-function setupElectron_renderer_js(pathTarget = 'dist') {
-  const string_assets = 'assets';
-  const string_renderer_js = 'renderer.js';
-  const path_assets = path.join(pathTarget, string_assets);
-  const path_renderer_js = path.join(pathTarget, string_renderer_js);
-
-  fs.writeFileSync(path_renderer_js, '');
-  const filenameList = fs.readdirSync(path_assets);
-  filenameList.forEach((filename) => {
-    const text = `import './${string_assets}/${filename}';\n`;
-    fs.appendFileSync(path_renderer_js, text);
-  });
-}
-
 function getPathRoot() {
   let pathRoot = process.cwd();
   return pathRoot;
@@ -130,10 +21,82 @@ function getPathElectron() {
   const pathRoot = process.cwd();
   const basename = path.basename(pathRoot);
   const pathParent = pathRoot.replace(basename, '');
-  const pathElectron = path.join(pathParent, `${basename}-electron`);
-  console.log(`pathElectron=\n`, pathElectron, `\n`);
-  return pathElectron;
+
+  return pathParent;
 }
+
+/**
+ * generate electron index.html
+ *
+ * just add
+ *
+ * <div id="app"></div>
+ *
+ * <script src="./renderer.js" type="module"></script>
+ *
+ *
+ * @param title
+ */
+function setupElectron_index_html(
+    title = null,
+) {
+
+  if (title === null) {
+    title = 'index.html title';
+  }
+
+  let indexHtmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="./favicon.ico" rel="icon">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>${title}</title>
+</head>
+<body>
+<div id="app"></div>
+<script src="./renderer.js" type="module"></script>
+</body>
+</html>
+`;
+
+  const string_index_html = 'index.html';
+  const path_index_html = path.join(getPathRoot(), 'dist', string_index_html);
+  fs.writeFileSync(path_index_html, '');
+  fs.writeFileSync(path_index_html, indexHtmlContent);
+
+}
+
+/**
+ * generate renderer.js
+ *
+ * read dir assets/ forEach()
+ *
+ * appendFile
+ *
+ *    import './assets/home-view-xxx.js'
+ *
+ */
+function setupElectron_renderer_js() {
+
+  let pathTarget = path.join(getPathRoot(), 'dist');
+  const string_assets = 'assets';
+  const string_renderer_js = 'renderer.js';
+  const path_assets = path.join(pathTarget, string_assets);
+  const path_renderer_js = path.join(pathTarget, string_renderer_js);
+
+  fs.writeFileSync(path_renderer_js, '');
+  const filenameList = fs.readdirSync(path_assets);
+  filenameList.forEach((filename) => {
+    const text = `import './${string_assets}/${filename}';\n`;
+    fs.appendFileSync(path_renderer_js, text);
+  });
+}
+
+const copyType = {
+  justCopy: 'justCopy',
+  electronIndex: 'electronIndex',
+};
 
 /**
  * npm run build (vite build) -->
@@ -149,25 +112,17 @@ function getPathElectron() {
  * end
  *
  * @param indexHtmlTitle index.html title
- * @param dirNameElectron electron project dir name
  */
 function setupVueToElectron(
     indexHtmlTitle = null,
-    dirNameElectron = null) {
+) {
 
   execAsync(cmd.npm_run_build, () => {
     setupElectron_index_html(indexHtmlTitle);
     setupElectron_renderer_js();
 
-    let pathElectron = getPathRoot()
-    if (dirNameElectron === null) {
-      pathElectron = getPathElectron()
-    }else {
-      pathElectron = path.join(getPathParent(), dirNameElectron)
-    }
-
     const src = path.join(getPathRoot(), 'dist');
-    const dest = path.join(pathElectron, 'public');
+    const dest = path.join(getPathElectron(), 'public');
     if (fs.existsSync(dest)) {
       console.log(`dest exists --> rm ... ${dest}`);
       fs.rmSync(dest, {recursive: true, force: true});
@@ -269,7 +224,7 @@ function npmRunMakeOpenOutSquirrel() {
 }
 
 function npmRunStart() {
-  execSync(cmd.npm_run_start_windows_terminal)
+  execSync(cmd.npm_run_start_windows_terminal);
 }
 
 const cmd = {
@@ -285,16 +240,12 @@ const cmd = {
 };
 
 module.exports = {
+  copyType: copyType,
   setupVueToElectron: setupVueToElectron,
   setupElectron_index_html: setupElectron_index_html,
   setupElectron_renderer_js: setupElectron_renderer_js,
 
   cmd: cmd,
-
-  readEnvFile: readEnvFile,
-  readPackageJson: readPackageJson,
-  getPathParent: getPathParent,
-  getPathRoot: getPathRoot,
 
   execSync: execSync,
   execAsync: execAsync,
